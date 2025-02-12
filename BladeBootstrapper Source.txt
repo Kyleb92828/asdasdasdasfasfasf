@@ -1,0 +1,221 @@
+BootStrapper
+Open Sourced By Bladesify
+
+
+
+
+PART One--------------
+
+
+
+
+{
+    "SoftwareVersion": "1.0",
+    "SoftwareUrl":"",
+    "Status":"False",
+    "Changelog":"[+] added blank"
+}
+
+
+
+
+
+
+
+
+PART Two--------------
+
+
+using System;
+using System.IO;
+using System.Net.Http;
+using System.Text;
+using System.Threading;
+using Newtonsoft.Json.Linq;
+using System.Threading.Tasks;
+
+class Program
+{
+    const string InfoUrl = "https://pastebin.com/raw/qc0wUDj2";
+    const string RbxVersionUrl = "https://clientsettings.roblox.com/v2/client-version/WindowsPlayer/channel/live";
+
+    static async Task Main()
+    {
+        await SetConsoleTitleFromJson();
+        PrintAsciiArt();
+        Console.WriteLine("\n[+] fetching version info...");
+
+        string info = await HttpGet(InfoUrl);
+        var infoJson = JObject.Parse(info);
+
+        if (infoJson["Status"]?.ToString() == "False")
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("[+] Mod It is currently down");
+            Thread.Sleep(5000);
+            return;
+        }
+
+        string localVersion = File.Exists("version.txt") ? File.ReadAllText("version.txt") : string.Empty;
+        Console.WriteLine("[+] current Mod It version: " + infoJson["SoftwareVersion"]);
+        Console.WriteLine("[+] current Mod It file version: " + (string.IsNullOrEmpty(localVersion) ? "none" : localVersion));
+
+        if (localVersion != infoJson["SoftwareVersion"]?.ToString())
+        {
+            Console.WriteLine("[+] new version detected!");
+            if (infoJson.ContainsKey("Changelog"))
+            {
+                Console.WriteLine("[+] changelog for new update below\n");
+                Console.WriteLine(infoJson["Changelog"]);
+            }
+            Console.WriteLine("\n[+] downloading Mod It...");
+            await DownloadFile(infoJson["SoftwareUrl"]?.ToString(), "ModIt.zip");
+            File.WriteAllText("version.txt", infoJson["SoftwareVersion"]?.ToString());
+            Console.WriteLine("[+] Mod It successfully installed! closing in 5 seconds.");
+            Thread.Sleep(5000);
+        }
+        else
+        {
+            Console.WriteLine("[+] you are already up to date. closing in 5 seconds.");
+            Thread.Sleep(5000);
+        }
+    }
+
+    static async Task SetConsoleTitleFromJson()
+    {
+        string response = await HttpGet(RbxVersionUrl);
+        if (!string.IsNullOrEmpty(response))
+        {
+            var data = JObject.Parse(response);
+            Console.Title = "Mod It | " + data["clientVersionUpload"];
+        }
+    }
+
+    static async Task<string> HttpGet(string url)
+    {
+        using (HttpClient client = new HttpClient())
+        {
+            try
+            {
+                return await client.GetStringAsync(url);
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+    }
+
+    static async Task DownloadFile(string url, string outputPath)
+    {
+        using (HttpClient client = new HttpClient())
+        {
+            try
+            {
+                byte[] data = await client.GetByteArrayAsync(url);
+                await File.WriteAllBytesAsync(outputPath, data);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("[+] failed to download file: " + ex.Message);
+            }
+        }
+    }
+
+    static void PrintAsciiArt()
+    {
+        Console.ForegroundColor = ConsoleColor.Magenta;
+        Console.WriteLine(@"███╗   ███╗ ██████╗ ██████╗     ██╗████████╗");
+        Console.WriteLine(@"████╗ ████║██╔═══██╗██╔══██╗    ██║╚══██╔══╝");
+        Console.WriteLine(@"██╔████╔██║██║   ██║██║  ██║    ██║   ██║   ");
+        Console.WriteLine(@"██║╚██╔╝██║██║   ██║██║  ██║    ██║   ██║   ");
+        Console.WriteLine(@"██║ ╚═╝ ██║╚██████╔╝██████╔╝    ██║   ██║   ");
+        Console.WriteLine(@"╚═╝     ╚═╝ ╚═════╝ ╚═════╝     ╚═╝   ╚═╝   ");
+        Console.WriteLine(@"                                            ");
+        Console.ForegroundColor = ConsoleColor.White;
+    }
+}
+
+
+
+
+
+
+
+
+PART Three------------
+
+
+
+  private async Task<bool> CheckVersion()
+  {
+      try
+      {
+          using (var client = new HttpClient())
+          {
+              var json = await client.GetStringAsync("https://pastebin.com/raw/qc0wUDj2");
+              dynamic data = JsonConvert.DeserializeObject(json);
+              string latestVersion = data.SoftwareVersion;
+
+              string versionFilePath = "version.txt";
+
+              if (!File.Exists(versionFilePath))
+              {
+                  File.WriteAllText(versionFilePath, latestVersion);
+                  return true; // First-time setup, allow launch
+              }
+
+              string currentVersion = File.ReadAllText(versionFilePath).Trim();
+              if (currentVersion != latestVersion)
+              {
+                  this.Invoke((MethodInvoker)delegate
+                  {
+                      MessageBox.Show(
+                          "New update detected! Please delete the current executor folder and run the bootstrapper.",
+                          "Update Required",
+                          MessageBoxButtons.OK,
+                          MessageBoxIcon.Warning);
+                      Application.Exit();
+                  });
+
+                  return false; // Block execution due to outdated version
+              }
+          }
+      }
+      catch (Exception ex)
+      {
+          this.Invoke((MethodInvoker)delegate
+          {
+              MessageBox.Show($"Failed to check version: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+          });
+      }
+      return true; // Default to allowing launch if version check fails
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+PART Fourth--------------
+
+
+
+
+
+           bool versionCheck = await CheckVersion();
+            if (!versionCheck)
+                return;
+
+
+
+
